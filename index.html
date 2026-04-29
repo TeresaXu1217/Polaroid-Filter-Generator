@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>拍立得復古濾鏡產生器</title>
+  <title>文青相紙濾鏡產生器</title>
   
   <!-- 引入 Tailwind CSS 進行快速排版 -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 引入 Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <!-- 引入 Google Fonts: 包含 Jost 與 Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   
   <!-- 引入 React 與 ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -20,20 +22,23 @@
   
   <style>
     body { font-family: 'Noto Sans TC', sans-serif; }
+    .font-jost { font-family: 'Jost', sans-serif; }
+    /* 隱藏原生 color picker 的怪異邊框 */
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.5rem; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 min-h-screen">
   <div id="root"></div>
 
-  <!-- React 程式碼寫在這裡 -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // 將外部依賴的圖標改為純 SVG 格式，確保在單一檔案中也能完美顯示
+    // SVG 圖標組
     const IconImage = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>);
     const IconUpload = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>);
     const IconType = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>);
-    const IconSliders = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>);
+    const IconPalette = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>);
     const IconCheck = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>);
     const IconDownload = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>);
 
@@ -63,9 +68,14 @@
     function App() {
       const canvasRef = useRef(null);
       const [imageObj, setImageObj] = useState(null);
-      const [title, setTitle] = useState('My Summer Memories');
-      const [text1, setText1] = useState('Kyoto, Japan');
-      const [text2, setText2] = useState('2023.08.15');
+      
+      // 預設文案對齊你的範例
+      const [title, setTitle] = useState('TAIWANESE TONE');
+      const [text1, setText1] = useState('Sweet Potato Balls Yellow');
+      const [text2, setText2] = useState('地瓜球黃');
+      
+      // 背景色與濾鏡狀態
+      const [bgColor, setBgColor] = useState('#ffffff');
       const [applyFilter, setApplyFilter] = useState(true);
 
       const handleImageUpload = (e) => {
@@ -86,33 +96,39 @@
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
+        // 設定畫布尺寸 9:16 (1080 x 1920)
         const cw = 1080;
-        const ch = 1350;
+        const ch = 1920;
         canvas.width = cw;
         canvas.height = ch;
 
-        ctx.fillStyle = '#fafafa'; 
+        // 1. 繪製背景色 (可由滴管工具選取)
+        ctx.fillStyle = bgColor; 
         ctx.fillRect(0, 0, cw, ch);
 
         const margin = 60;
-        const imgSize = cw - margin * 2; 
+        const imgW = cw - margin * 2; // 960
+        // 圖片高度設為 4:5 比例，呈現文青雜誌感
+        const imgH = 1200; 
 
         if (imageObj) {
           const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = imgSize;
-          tempCanvas.height = imgSize;
+          tempCanvas.width = imgW;
+          tempCanvas.height = imgH;
           const tCtx = tempCanvas.getContext('2d');
 
-          const scale = Math.max(imgSize / imageObj.width, imgSize / imageObj.height);
+          // 置中裁切邏輯
+          const scale = Math.max(imgW / imageObj.width, imgH / imageObj.height);
           const w = imageObj.width * scale;
           const h = imageObj.height * scale;
-          const x = (imgSize - w) / 2;
-          const y = (imgSize - h) / 2;
+          const x = (imgW - w) / 2;
+          const y = (imgH - h) / 2;
 
           tCtx.drawImage(imageObj, x, y, w, h);
 
+          // 套用 Lightroom 色調描述檔
           if (applyFilter) {
-            const imgData = tCtx.getImageData(0, 0, imgSize, imgSize);
+            const imgData = tCtx.getImageData(0, 0, imgW, imgH);
             const data = imgData.data;
             for (let i = 0; i < data.length; i += 4) {
               data[i] = rLUT[data[i]];         
@@ -122,41 +138,44 @@
             tCtx.putImageData(imgData, 0, 0);
           }
 
+          // 繪製照片到主畫布
           ctx.drawImage(tempCanvas, margin, margin);
-          ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-          ctx.lineWidth = 4;
-          ctx.strokeRect(margin, margin, imgSize, imgSize);
         } else {
+          // 佔位區域
           ctx.fillStyle = '#e5e7eb';
-          ctx.fillRect(margin, margin, imgSize, imgSize);
+          ctx.fillRect(margin, margin, imgW, imgH);
           ctx.fillStyle = '#9ca3af';
-          ctx.font = '40px sans-serif';
+          ctx.font = '40px "Noto Sans TC", sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('請從左側上傳照片', cw / 2, margin + imgSize / 2);
+          ctx.fillText('請從左側上傳照片', cw / 2, margin + imgH / 2);
         }
 
-        ctx.textAlign = 'center';
-        const fontStack = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif';
+        // --- 繪製文字排版 ---
+        // 確保文字與背景色有對比，這裡強制使用深黑色
+        ctx.fillStyle = '#111827'; 
+        
+        // 主標題 (Jost 字體，英文靠左)
+        ctx.font = 'bold 96px "Jost", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(title || '', margin, 1460); // 照片底端是 1260，往下加 200px
 
-        ctx.fillStyle = '#1f2937';
-        ctx.font = `bold 54px ${fontStack}`;
-        ctx.fillText(title || ' ', cw / 2, 1120);
+        // 內文一 (英文靠左，Jost)
+        ctx.font = '48px "Jost", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(text1 || '', margin, 1720);
 
-        ctx.font = `40px ${fontStack}`;
-        ctx.fillStyle = '#4b5563';
-        ctx.fillText(text1 || ' ', cw / 2, 1200);
+        // 內文二 (中文靠右，黑體)
+        ctx.font = '48px "Noto Sans TC", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(text2 || '', cw - margin, 1720);
 
-        ctx.font = `italic 32px ${fontStack}`;
-        ctx.fillStyle = '#6b7280';
-        ctx.fillText(text2 || ' ', cw / 2, 1260);
-
-      }, [imageObj, title, text1, text2, applyFilter]);
+      }, [imageObj, title, text1, text2, applyFilter, bgColor]);
 
       const handleDownload = () => {
         if (!canvasRef.current) return;
         const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.95);
         const link = document.createElement('a');
-        link.download = `polaroid-${Date.now()}.jpg`;
+        link.download = `vintage-story-${Date.now()}.jpg`;
         link.href = dataUrl;
         document.body.appendChild(link);
         link.click();
@@ -164,76 +183,128 @@
       };
 
       return (
-        <div className="py-10 px-4">
+        <div className="py-10 px-4 font-sans">
           <div className="max-w-6xl mx-auto">
             <header className="mb-10 text-center">
               <h1 className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
-                <IconImage className="w-8 h-8 text-indigo-600" />
-                拍立得復古濾鏡產生器
+                <IconImage className="w-8 h-8 text-amber-600" />
+                文青相紙濾鏡產生器
               </h1>
-              <p className="text-gray-500 mt-2">將照片套用你專屬的 Lightroom 復古色彩，並添加文字與相紙邊框。</p>
+              <p className="text-gray-500 mt-2">16:9 限動尺寸 • 自訂相紙顏色 • 支援相片取色</p>
             </header>
 
-            <div className="flex flex-col lg:flex-row gap-8 bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="w-full lg:w-1/2 space-y-6">
+            <div className="flex flex-col lg:flex-row gap-8 bg-white p-8 rounded-3xl shadow-sm border border-gray-200">
+              {/* 左側：控制面板 */}
+              <div className="w-full lg:w-1/2 space-y-7">
+                
+                {/* 步驟一：上傳照片 */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <IconUpload className="w-4 h-4" /> 步驟一：上傳照片
                   </label>
-                  <label className="flex justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-xl appearance-none cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 focus:outline-none">
+                  <label className="flex justify-center w-full h-28 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-xl appearance-none cursor-pointer hover:border-amber-400 hover:bg-amber-50 focus:outline-none">
                     <span className="flex items-center space-x-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                       <span className="font-medium text-gray-600">
-                        {imageObj ? '點擊重新選擇照片' : '點擊選擇檔案上傳'}
+                        {imageObj ? '照片已載入，點擊可重新選擇' : '點擊選擇檔案上傳'}
                       </span>
                     </span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   </label>
                 </div>
 
+                {/* 步驟二：編輯文字 */}
                 <div className="space-y-4">
                   <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <IconType className="w-4 h-4" /> 步驟二：編輯文字
+                    <IconType className="w-4 h-4" /> 步驟二：文字編排
                   </label>
+                  
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">主標題</label>
-                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="輸入標題文字..." />
+                    <label className="block text-xs text-gray-500 mb-1">主標題 (英文粗體)</label>
+                    <input 
+                      type="text" 
+                      value={title} 
+                      onChange={(e) => setTitle(e.target.value)} 
+                      className="w-full px-4 py-2 font-jost font-bold text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none" 
+                    />
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">內文一 (如地點)</label>
-                    <input type="text" value={text1} onChange={(e) => setText1(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="輸入地點或描述..." />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">內文二 (如日期)</label>
-                    <input type="text" value={text2} onChange={(e) => setText2(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="輸入日期..." />
+                  <div className="flex gap-4">
+                    <div className="w-1/2">
+                      <label className="block text-xs text-gray-500 mb-1">左下內文 (英文)</label>
+                      <input 
+                        type="text" 
+                        value={text1} 
+                        onChange={(e) => setText1(e.target.value)} 
+                        className="w-full px-4 py-2 font-jost border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none" 
+                      />
+                    </div>
+                    <div className="w-1/2">
+                      <label className="block text-xs text-gray-500 mb-1">右下內文 (中文黑體)</label>
+                      <input 
+                        type="text" 
+                        value={text2} 
+                        onChange={(e) => setText2(e.target.value)} 
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none" 
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="pt-2">
-                  <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
-                    <IconSliders className="w-4 h-4" /> 步驟三：復古濾鏡
+                {/* 步驟三：色彩與濾鏡 */}
+                <div className="space-y-4">
+                  <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <IconPalette className="w-4 h-4" /> 步驟三：外框顏色與色調
                   </label>
-                  <button onClick={() => setApplyFilter(!applyFilter)} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${applyFilter ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
-                    <span className="font-medium">套用 Polaroid •••• 色彩檔案</span>
-                    <div className={`w-6 h-6 rounded-md flex items-center justify-center ${applyFilter ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
+                  
+                  {/* 背景選色器 (滴管工具) */}
+                  <div className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-xl bg-gray-50">
+                    <div>
+                      <div className="font-medium text-gray-700 text-sm">自訂外框顏色</div>
+                      <div className="text-xs text-gray-500">點擊右側色塊可使用滴管吸取照片顏色</div>
+                    </div>
+                    <input 
+                      type="color" 
+                      value={bgColor} 
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="w-10 h-10 cursor-pointer bg-transparent"
+                      title="選擇顏色或使用滴管"
+                    />
+                  </div>
+
+                  {/* 描述檔濾鏡開關 */}
+                  <button 
+                    onClick={() => setApplyFilter(!applyFilter)} 
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${applyFilter ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-gray-50 border-gray-200 text-gray-600'}`}
+                  >
+                    <span className="font-medium text-sm">套用 Polaroid •••• 色彩描述檔</span>
+                    <div className={`w-6 h-6 rounded-md flex items-center justify-center ${applyFilter ? 'bg-amber-600 text-white' : 'bg-gray-200'}`}>
                       {applyFilter && <IconCheck className="w-4 h-4" />}
                     </div>
                   </button>
                 </div>
 
-                <div className="pt-4">
-                   <button onClick={handleDownload} disabled={!imageObj} className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 px-6 rounded-xl font-bold transition shadow-lg shadow-gray-200">
+                {/* 下載按鈕 */}
+                <div className="pt-2">
+                   <button 
+                    onClick={handleDownload} 
+                    disabled={!imageObj} 
+                    className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 px-6 rounded-xl font-bold transition shadow-lg shadow-gray-200"
+                   >
                       <IconDownload className="w-5 h-5" />
-                      匯出並下載圖片
+                      匯出儲存至手機相簿
                    </button>
                 </div>
               </div>
 
-              <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 p-6">
-                <div className="relative shadow-2xl overflow-hidden rounded-md" style={{ maxWidth: '400px', width: '100%' }}>
-                  <canvas ref={canvasRef} className="w-full h-auto block" />
+              {/* 右側：Canvas 預覽 (等比縮放展示) */}
+              <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-100 rounded-2xl border border-gray-200 p-6 overflow-hidden">
+                <div className="relative shadow-2xl rounded-sm" style={{ width: '100%', maxWidth: '360px', aspectRatio: '9/16' }}>
+                  <canvas 
+                    ref={canvasRef} 
+                    className="w-full h-full block object-contain"
+                  />
                 </div>
               </div>
             </div>
