@@ -27,6 +27,17 @@
     input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.5rem; }
     /* 防止長按選取文字，確保長按只會觸發圖片儲存 */
     .preview-image { -webkit-touch-callout: default; }
+    
+    /* 自訂拉桿樣式 (Range Slider) */
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #111827; cursor: pointer; margin-top: -6px;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%; height: 4px; cursor: pointer; background: #e5e7eb; border-radius: 2px;
+    }
   </style>
 </head>
 <body>
@@ -38,8 +49,19 @@
     // --- 圖標組 ---
     const IconUpload = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>);
     const IconType = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>);
-    const IconPalette = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>);
+    const IconLayout = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>);
+    const IconSparkles = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>);
     const IconDownload = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>);
+
+    // Hex 轉 RGBA 工具 (用於畫帶透明度的線條)
+    const hexToRgba = (hex, alpha) => {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+      const r = parseInt(c.substring(0, 2), 16) || 0;
+      const g = parseInt(c.substring(2, 4), 16) || 0;
+      const b = parseInt(c.substring(4, 6), 16) || 0;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
 
     // --- 完整匯入 29 個 Lightroom 描述檔的參數 ---
     const filterPresets = {
@@ -111,13 +133,18 @@
       const [headerRight, setHeaderRight] = useState('HELOKI');
       
       // 表格文案 (時間、地點、評分)
-      const [row1, setRow1] = useState('2023.10.25 14:30'); // TIME
-      const [row2, setRow2] = useState('MUSEUM CAFE');    // LOCATION (地點)
-      const [row3, setRow3] = useState('★★★★☆');          // RATING (評分)
+      const [row1, setRow1] = useState('2023.10.25 14:30'); 
+      const [row2, setRow2] = useState('MUSEUM CAFE');    
+      const [row3, setRow3] = useState('★★★★☆');          
       
-      // 色彩與濾鏡
+      // 版面與色彩
+      const [isFullBleed, setIsFullBleed] = useState(false); // 全滿版底圖開關
       const [bgColor, setBgColor] = useState('#ffffff');
+      const [textColor, setTextColor] = useState('#111827'); // 自訂文字與線條顏色
+      
+      // 濾鏡與特效
       const [selectedPreset, setSelectedPreset] = useState('none');
+      const [grainAmount, setGrainAmount] = useState(0); // 顆粒多寡
 
       const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -132,6 +159,7 @@
         }
       };
 
+      // Canvas 繪製主邏輯
       useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -143,104 +171,89 @@
         canvas.width = cw;
         canvas.height = ch;
 
-        // 背景色
+        // 1. 繪製背景 (留白模式畫自訂背景色，滿版模式也會畫墊底)
         ctx.fillStyle = bgColor; 
         ctx.fillRect(0, 0, cw, ch);
 
         const marginX = 80;
         const contentW = cw - marginX * 2; // 920
 
-        const textColor = '#111827';
+        // 解析文字與線條顏色
         ctx.fillStyle = textColor;
-
-        // --- 1. 頂部排版 ---
-        // 畫極細線（使用 rgba 透明度 + 座標 0.5 來達到 Crisp Thin Line 效果）
-        ctx.lineWidth = 1; 
-        ctx.strokeStyle = 'rgba(17, 24, 39, 0.35)'; 
-        ctx.beginPath();
-        ctx.moveTo(marginX, 140.5);
-        ctx.lineTo(cw - marginX, 140.5);
-        ctx.stroke();
-
-        ctx.textBaseline = 'alphabetic';
-        // 左上角標題 (縮小兩號)
-        ctx.font = 'bold 36px "Jost", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(headerLeft || ' ', marginX, 210);
-
-        // 右上角標題 (縮小兩號)
-        ctx.font = 'bold 52px "Jost", sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText(headerRight || ' ', cw - marginX, 210);
+        const lineRgba = hexToRgba(textColor, 0.35); // 讓線條有透明度
 
         // --- 2. 圖片處理與繪製 ---
         if (imageObj) {
-          const imgAreaH = 1000;
+          // 判斷繪製模式的尺寸與位置
+          const tempW = isFullBleed ? cw : contentW;
+          const tempH = isFullBleed ? ch : 1000;
+          const drawX = isFullBleed ? 0 : marginX;
+          const drawY = isFullBleed ? 0 : 290;
+
           const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = contentW;
-          tempCanvas.height = imgAreaH;
+          tempCanvas.width = tempW;
+          tempCanvas.height = tempH;
           const tCtx = tempCanvas.getContext('2d');
 
-          // 置中縮放
-          const scale = Math.max(contentW / imageObj.width, imgAreaH / imageObj.height);
+          // Cover 等比縮放置中
+          const scale = Math.max(tempW / imageObj.width, tempH / imageObj.height);
           const w = imageObj.width * scale;
           const h = imageObj.height * scale;
-          const x = (contentW - w) / 2;
-          const y = (imgAreaH - h) / 2;
+          const x = (tempW - w) / 2;
+          const y = (tempH - h) / 2;
 
           tCtx.drawImage(imageObj, x, y, w, h);
 
-          // 套用自訂 Lightroom 描述檔引擎
-          if (selectedPreset !== 'none') {
-            const preset = filterPresets[selectedPreset];
+          // 套用自訂 Lightroom 描述檔與底片顆粒引擎
+          if (selectedPreset !== 'none' || grainAmount > 0) {
+            const preset = filterPresets[selectedPreset] || filterPresets['none'];
             
             const rLUT = generateLUT(preset.r || linearCurve);
             const gLUT = generateLUT(preset.g || linearCurve);
             const bLUT = generateLUT(preset.b || linearCurve);
 
-            // 解析 Lightroom 參數
             const expFactor = Math.pow(2, preset.exp || 0);
             const contFactor = ((preset.cont || 0) + 100) / 100;
             const temp = preset.temp || 0;
             const tint = preset.tint || 0;
             const satFactor = 1 + ((preset.sat || 0) / 100);
 
-            const imgData = tCtx.getImageData(0, 0, contentW, imgAreaH);
+            const imgData = tCtx.getImageData(0, 0, tempW, tempH);
             const data = imgData.data;
             
             for (let i = 0; i < data.length; i += 4) {
-              // 套用 RGB 曲線
               let r = rLUT[data[i]];         
               let g = gLUT[data[i + 1]]; 
               let b = bLUT[data[i + 2]]; 
 
-              // 曝光 (Exposure)
-              if (expFactor !== 1) {
-                r *= expFactor; g *= expFactor; b *= expFactor;
-              }
-
-              // 色溫與色調 (Temp & Tint)
+              // 曝光
+              if (expFactor !== 1) { r *= expFactor; g *= expFactor; b *= expFactor; }
+              // 色溫與色調
               if (temp !== 0 || tint !== 0) {
-                b -= temp * 0.8;
-                r += temp * 0.8;
-                g -= tint * 0.8;
-                r += tint * 0.4;
-                b += tint * 0.4;
+                b -= temp * 0.8; r += temp * 0.8; g -= tint * 0.8;
+                r += tint * 0.4; b += tint * 0.4;
               }
-
-              // 對比 (Contrast)
+              // 對比
               if (contFactor !== 1) {
                 r = ((r / 255 - 0.5) * contFactor + 0.5) * 255;
                 g = ((g / 255 - 0.5) * contFactor + 0.5) * 255;
                 b = ((b / 255 - 0.5) * contFactor + 0.5) * 255;
               }
-
-              // 飽和度 (Saturation)
+              // 飽和度
               if (satFactor !== 1) {
                 let lum = 0.299 * r + 0.587 * g + 0.114 * b;
                 r = lum + (r - lum) * satFactor;
                 g = lum + (g - lum) * satFactor;
                 b = lum + (b - lum) * satFactor;
+              }
+
+              // --- 底片顆粒 (Film Grain) 演算法 ---
+              if (grainAmount > 0) {
+                // 產生隨機噪點 (單色雜訊更接近真實底片)
+                const noise = (Math.random() - 0.5) * grainAmount;
+                r += noise;
+                g += noise;
+                b += noise;
               }
 
               // 防溢出限制
@@ -251,8 +264,9 @@
             tCtx.putImageData(imgData, 0, 0);
           }
 
-          ctx.drawImage(tempCanvas, marginX, 290);
-        } else {
+          ctx.drawImage(tempCanvas, drawX, drawY);
+        } else if (!isFullBleed) {
+          // 沒有上傳圖片時的預設佔位區
           ctx.fillStyle = '#f3f4f6';
           ctx.fillRect(marginX, 290, contentW, 1000);
           ctx.fillStyle = '#9ca3af';
@@ -261,8 +275,24 @@
           ctx.fillText('請上傳照片以顯示於此處', cw / 2, 790);
         }
 
-        // --- 3. 底部表格排版 ---
+        // --- 3. 頂部文字排版 ---
+        ctx.lineWidth = 1; 
+        ctx.strokeStyle = lineRgba; 
+        ctx.beginPath();
+        ctx.moveTo(marginX, 140.5);
+        ctx.lineTo(cw - marginX, 140.5);
+        ctx.stroke();
+
         ctx.fillStyle = textColor;
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = 'bold 36px "Jost", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(headerLeft || ' ', marginX, 210);
+        ctx.font = 'bold 52px "Jost", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(headerRight || ' ', cw - marginX, 210);
+
+        // --- 4. 底部表格排版 ---
         let tableY = 1520;
         const rowData = [
           { label: 'TIME', value: row1 },
@@ -270,49 +300,42 @@
           { label: 'RATING', value: row3 }
         ];
 
-        // 表格細線
         ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(17, 24, 39, 0.35)';
+        ctx.strokeStyle = lineRgba;
         rowData.forEach((row) => {
           ctx.beginPath();
-          ctx.moveTo(marginX, tableY + 0.5); // +0.5 保證線條像素極細不發散
+          ctx.moveTo(marginX, tableY + 0.5);
           ctx.lineTo(cw - marginX, tableY + 0.5);
           ctx.stroke();
 
           const textY = tableY + 50; 
-          
           ctx.font = 'bold 32px "Jost", "Noto Sans TC", sans-serif';
           ctx.textAlign = 'left';
           ctx.fillText(row.label, marginX, textY);
-
           ctx.textAlign = 'right';
           ctx.fillText(row.value, cw - marginX, textY);
 
-          tableY += 75; // 加大間距，呼吸感更好
+          tableY += 75; 
         });
 
-        // 畫最後一條底線
+        // 最後底線
         ctx.beginPath();
         ctx.moveTo(marginX, tableY + 0.5);
         ctx.lineTo(cw - marginX, tableY + 0.5);
         ctx.stroke();
 
-        // --- 4. 最底部地理位置 ---
+        // --- 5. 最底部地理位置 ---
         const footerY = 1830;
         ctx.font = 'bold 28px "Jost", sans-serif';
-        
-        // 左：胡志明
         ctx.textAlign = 'left';
         ctx.fillText('HO CHI MINH', marginX, footerY);
-
-        // 右：越南
         ctx.textAlign = 'right';
         ctx.fillText('VIETNAM', cw - marginX, footerY);
 
         // 轉為圖片以供儲存
         setFinalImageUrl(canvas.toDataURL('image/jpeg', 0.95));
 
-      }, [imageObj, headerLeft, headerRight, row1, row2, row3, bgColor, selectedPreset]);
+      }, [imageObj, headerLeft, headerRight, row1, row2, row3, bgColor, textColor, isFullBleed, selectedPreset, grainAmount]);
 
       const handleDownload = () => {
         if (!finalImageUrl) return;
@@ -335,6 +358,7 @@
             
             <div className="w-full lg:w-[45%] bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-8">
               
+              {/* 1. Upload */}
               <div>
                 <label className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3 tracking-wider font-jost uppercase">
                   <IconUpload className="w-4 h-4" /> 1. Upload Photo
@@ -349,6 +373,7 @@
                 </label>
               </div>
 
+              {/* 2. Header Text */}
               <div>
                 <label className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3 tracking-wider font-jost uppercase">
                   <IconType className="w-4 h-4" /> 2. Top Header Text
@@ -359,6 +384,7 @@
                 </div>
               </div>
 
+              {/* 3. Catalog Info */}
               <div>
                 <label className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3 tracking-wider font-jost uppercase">
                   <IconType className="w-4 h-4" /> 3. Catalog Information
@@ -379,11 +405,43 @@
                 </div>
               </div>
 
+              {/* 4. Layout & Colors */}
               <div>
                 <label className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3 tracking-wider font-jost uppercase">
-                  <IconPalette className="w-4 h-4" /> 4. Color & Filter Presets
+                  <IconLayout className="w-4 h-4" /> 4. Layout & Colors
                 </label>
                 <div className="space-y-3">
+                  {/* 版面切換按鈕 */}
+                  <div className="flex p-1 bg-gray-100 rounded-lg">
+                    <button 
+                      onClick={() => setIsFullBleed(false)}
+                      className={`flex-1 py-2 text-xs font-bold tracking-widest uppercase rounded-md transition-all ${!isFullBleed ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                    >Classic Form</button>
+                    <button 
+                      onClick={() => setIsFullBleed(true)}
+                      className={`flex-1 py-2 text-xs font-bold tracking-widest uppercase rounded-md transition-all ${isFullBleed ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                    >Full Bleed (滿版)</button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className={`flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 ${isFullBleed ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <span className="text-xs font-bold text-gray-500 tracking-widest font-jost uppercase">FRAME</span>
+                      <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-6 h-6 cursor-pointer bg-transparent" disabled={isFullBleed} />
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg bg-gray-50">
+                      <span className="text-xs font-bold text-gray-500 tracking-widest font-jost uppercase">TEXT</span>
+                      <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-6 h-6 cursor-pointer bg-transparent" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Filters & Effects */}
+              <div>
+                <label className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3 tracking-wider font-jost uppercase">
+                  <IconSparkles className="w-4 h-4" /> 5. Filters & Effects
+                </label>
+                <div className="space-y-4">
                   <select 
                     value={selectedPreset} 
                     onChange={(e) => setSelectedPreset(e.target.value)}
@@ -394,13 +452,24 @@
                     ))}
                   </select>
                   
-                  <div className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg bg-gray-50">
-                    <span className="text-xs font-bold text-gray-400 tracking-widest font-jost uppercase">FRAME COLOR</span>
-                    <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-8 h-8 cursor-pointer bg-transparent" />
+                  {/* 相片顆粒調整拉桿 */}
+                  <div className="px-4 py-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-bold text-gray-500 tracking-widest font-jost uppercase">Film Grain (底片顆粒)</span>
+                      <span className="text-xs font-bold text-gray-900">{grainAmount}</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="150" 
+                      value={grainAmount} 
+                      onChange={(e) => setGrainAmount(Number(e.target.value))}
+                    />
                   </div>
                 </div>
               </div>
 
+              {/* Download */}
               <div className="pt-2">
                 <button 
                   onClick={handleDownload} 
